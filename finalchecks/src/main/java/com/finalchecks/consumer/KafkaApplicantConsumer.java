@@ -28,8 +28,6 @@ public class KafkaApplicantConsumer {
 
     private final DecisionService decisionService;
 
-    // TODO: add error serializer
-
     @KafkaListener(topics = "#{'${kafka-custom.applicant.topic}'.split(',')}",
             containerFactory = "kafkaListenerContainerApplicantFactory")
     public void consumeApplicantTopicMessages(@Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
@@ -48,7 +46,6 @@ public class KafkaApplicantConsumer {
             acknowledgment.nack(Duration.of(retryDuration, ChronoUnit.SECONDS));
         } catch (RuntimeException ex) {
             log.error("NOT PERSISTENCE ERROR for applicant = {}", applicant.getApplicantId(), ex);
-            // TODO: make dead end topic or persist data somewhere else
         }
     }
 }

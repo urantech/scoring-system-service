@@ -22,7 +22,6 @@ public class DepositConsumer {
             modelService.scoreDeposit(deposit);
         } catch (RuntimeException ex) {
             log.error("ERROR during scoring deposit = {}", depositId);
-            // TODO: do something if error occurred during checking applicant
         }
     }
 }

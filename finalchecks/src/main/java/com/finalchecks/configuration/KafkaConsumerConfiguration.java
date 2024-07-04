@@ -27,7 +27,6 @@ public class KafkaConsumerConfiguration {
     @Value("${kafka-custom.applicant.groupId}")
     private String applicantGroupId;
 
-    // FIXME: Read docs for partitioning and so on
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 

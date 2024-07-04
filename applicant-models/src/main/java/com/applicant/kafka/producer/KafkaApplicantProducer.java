@@ -24,7 +24,6 @@ public class KafkaApplicantProducer {
             log.info("Successfully persisted data to topic = {}", topic);
         } catch (RuntimeException ex) {
             log.error("Error during persisting data to Kafka. Topic = {}", topic);
-            // TODO: add meterRegistry
         }
     }
 }

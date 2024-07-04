@@ -22,7 +22,6 @@ public class ApplicantConsumer {
             modelService.scoreApplicant(applicant);
         } catch (RuntimeException ex) {
             log.error("ERROR during scoring applicant = {}", applicantId);
-            // TODO: do something if error occurred during checking applicant
         }
     }
 }
