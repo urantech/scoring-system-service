@@ -1,0 +1,65 @@
+server:
+  port: 8086
+
+management:
+  tracing:
+    enabled: true
+    sampling.probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+  zipkin.tracing.endpoint: 'http://localhost:9411/api/v2/spans'
+
+logging.pattern.level: '%5p [application-name: ${spring.application.name:}, traceId: %X{traceId:-}, spanId: %X{spanId:-}]'
+
+app:
+  executor:
+    threadsPerProcessor: 10
+
+spring:
+  liquibase:
+    change-log: 'classpath:db/changelog/changelog-final-checks.yaml'
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      auto-offset-reset: earliest
+  application:
+    name: final-checks
+  datasource:
+    username: 'urantech'
+    password: 'superSecret'
+    url: jdbc:postgresql://localhost:5436/postgres-final-checks-db
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: 'true'
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  zipkin:
+    base-url: 'http://localhost:9411'
+
+services:
+  concrete-decision: ''
+  fraud-analyst: ''
+
+kafka-custom:
+  deposit:
+    groupId: 'deposit'
+    topic: 'deposit-topic'
+  applicant:
+    groupId: 'applicant'
+    topic: 'applicant-topic'
+  retry-duration: 150
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    service-url:
+      defaultZone: 'http://localhost:8761/eureka'
+    fetch-registry: true
+    register-with-eureka: true

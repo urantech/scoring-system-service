@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          initial-checks:
+            url: http://localhost:8082
+          final-checks:
+            url: http://localhost:8086

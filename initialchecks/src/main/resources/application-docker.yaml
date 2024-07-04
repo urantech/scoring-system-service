@@ -1,0 +1,52 @@
+server:
+  port: 8082
+
+management:
+  tracing:
+    enabled: true
+    sampling.probability: 1.0
+
+  zipkin.tracing.endpoint: ${ZIPKIN_TRACING_ENDPOINT:http://zipkin-tracing:9411/api/v2/spans}
+
+logging.pattern.level: "trace_id=%mdc{traceId} span_id=%mdc{spanId} trace_flags=%mdc{traceFlags} %p"
+
+spring:
+  application:
+    name: initial-checks
+  datasource:
+    username: ${DB_USERNAME:urantech}
+    password: ${DB_PASSWORD:superSecret}
+    url: ${DB_CONNECTION:jdbc:postgresql://postgres-checks:5432/initial-checks-db}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: 'true'
+    hibernate:
+      ddl-auto: update
+    show-sql: 'true'
+  zipkin:
+    base-url: ${ZIPKIN_BASE_URL:http://zipkin-tracing:9411}
+  rabbitmq:
+    addresses: ${RABBIT_MQ:rabbitmq:5672}
+
+app:
+  executor:
+    threadsPerProcessor: 10
+
+rabbitmq:
+  exchanges:
+    internal: ${RABBIT_MQ_EXCHANGE:internal.exchange}
+  queues:
+    applicant-models: ${RABBIT_MQ_APPLICANT_QUEUE:applicant.queue}
+    deposit-models: ${RABBIT_MQ_DEPOSIT_QUEUE:deposit.queue}
+  routing-keys:
+    internal-applicant: ${RABBIT_MQ_RK_APPLICANT:internal.applicant.routing-key}
+    internal-deposit: ${RABBIT_MQ_RK_DEPOSIT:internal.deposit.routing-key}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_ENDPOINT:http://eureka-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="feign-clients" />
+        <module name="finalchecks" />
+        <module name="amqp" />
+        <module name="api-gateway" />
+        <module name="deposit-models" />
+        <module name="initialchecks" />
+        <module name="common-tools" />
+        <module name="startscoring" />
+        <module name="applicant-models" />
+        <module name="eureka-server" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="scoring-system" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

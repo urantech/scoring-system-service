@@ -1,0 +1,223 @@
+services:
+  postgres-final-checks:
+    container_name: postgres-final-checks
+    image: postgres
+    environment:
+      POSTGRES_USER: urantech
+      POSTGRES_PASSWORD: superSecret
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5436:5432"
+    networks:
+      - postgres-scoring
+    restart: unless-stopped
+  postgres-checks:
+    container_name: postgres-initial-checks
+    image: postgres
+    environment:
+      POSTGRES_USER: urantech
+      POSTGRES_PASSWORD: superSecret
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5435:5432"
+    networks:
+      - postgres-scoring
+    restart: unless-stopped
+  postgres-start:
+    container_name: postgres-start-scoring
+    image: postgres
+    environment:
+      POSTGRES_USER: urantech
+      POSTGRES_PASSWORD: superSecret
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5434:5432"
+    networks:
+      - postgres-scoring
+    restart: unless-stopped
+  pgadmin:
+    container_name: pgadmin-scoring
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - postgres-scoring
+    restart: unless-stopped
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin
+    networks:
+      - spring
+    ports:
+      # Port used for the Zipkin UI and HTTP Api
+      - "9411:9411"
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.9.11-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - "./data:/var/lib/rabbitmq/mnesia/"
+    networks:
+      - spring
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-container
+    ports:
+      - "22181:2181"
+    volumes:
+      - ./tmp/docker/zookeeper/data:/var/lib/zookeeper/data
+      - ./tmp/docker/zookeeper/logs:/var/lib/zookeeper/log
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    networks:
+      - spring
+  kafka:
+    image: confluentinc/cp-kafka:latest
+#    container_name: kafka-container
+    ports:
+      - "29092:29092"
+    volumes:
+      - ./tmp/docker/kafka/data:/var/lib/kafka/data
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    networks:
+      - spring
+    depends_on:
+      - zookeeper
+  eureka-server:
+    image: enoshima/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8762"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    # docker will match after - in application-docker.yaml
+    networks:
+      - spring
+    depends_on:
+      - zipkin
+  api-gateway:
+    image: enoshima/api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - spring
+    depends_on:
+      - zipkin
+      - eureka-server
+  start-scoring:
+    image: enoshima/startscoring:latest
+    container_name: start-scoring
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_CONNECTION=jdbc:postgresql://postgres-start:5432/postgres-start-scoring-db
+    networks:
+      - spring
+      - postgres-scoring
+    depends_on:
+      - zipkin
+      - postgres-start
+      - eureka-server
+      - api-gateway
+  initial-checks:
+    image: enoshima/initialchecks:latest
+    container_name: initial-checks
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_CONNECTION=jdbc:postgresql://postgres-checks:5432/initial-checks-db
+    networks:
+      - spring
+      - postgres-scoring
+    depends_on:
+      - zipkin
+      - postgres-checks
+      - rabbitmq
+      - eureka-server
+  applicant-models:
+    image: enoshima/applicant-models:latest
+    container_name: applicant-models
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - spring
+      - postgres-scoring
+    depends_on:
+      - zipkin
+      - rabbitmq
+      - zookeeper
+      - kafka
+      - eureka-server
+  deposit-models:
+    image: enoshima/deposit-models:latest
+    container_name: deposit-models
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - spring
+      - postgres-scoring
+    depends_on:
+      - zipkin
+      - rabbitmq
+      - zookeeper
+      - kafka
+      - eureka-server
+  final-checks:
+    image: enoshima/finalchecks:latest
+    container_name: final-checks
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_CONNECTION=jdbc:postgresql://postgres-final-checks:5432/postgres-final-checks-db
+    networks:
+      - spring
+      - postgres-scoring
+    depends_on:
+      - zipkin
+      - postgres-final-checks
+      - eureka-server
+
+networks:
+  postgres-scoring:
+    driver: bridge
+  spring:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
